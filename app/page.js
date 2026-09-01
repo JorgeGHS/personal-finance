@@ -343,8 +343,10 @@ export default function Dashboard() {
             <p className="cap">reconstruido a partir de tu historial real de transacciones (2021–2026)</p>
             <div className="chart-wrap" style={{ height: 280 }}><canvas ref={contributionsCanvas} /></div>
             <p className="note">
-              No incluye Oracle (RSU) ni Ledgy (stock options) — son compensación en acciones, no dinero que haya entrado en una cuenta.
-              Sí incluye el fondo Robeco de Sabadell (con fecha aproximada, no tengo el detalle exacto de esa aportación).
+              Incluye Oracle (RSU) y Ledgy (stock options) valorados al precio de mercado en su fecha de entrega/vesting — no en su valor actual —
+              tal y como tributan en la Renta como salario. A partir de esa fecha, la subida de valor cuenta como rentabilidad, no como aportación.
+              El fondo Robeco usa una fecha aproximada (30 cumpleaños); los grants de Ledgy con vesting escalonado usan la fecha de concesión como aproximación,
+              ya que no hay detalle exacto de cada tramo individual.
             </p>
           </div>
           <div className="card">
@@ -352,13 +354,12 @@ export default function Dashboard() {
             <p className="cap">capital movido a cuentas de inversión vs. valor de mercado hoy</p>
             {(() => {
               const aportado = totalContributed();
-              const orcl = holdings.find((h) => h.id === 'orcl-fid');
-              const comparable = t.invested - (orcl ? value(orcl) : 0);
+              const comparable = t.invested + t.privateEq;
               const gain = comparable - aportado;
               const gainPct = aportado ? (gain / aportado) * 100 : 0;
               return (
                 <ul className="summary-list">
-                  <li><span>Capital aportado</span><span className="amt">{fmt(aportado)}</span></li>
+                  <li><span>Capital aportado (incl. Oracle y Ledgy a precio de entrega)</span><span className="amt">{fmt(aportado)}</span></li>
                   <li><span>Valor de mercado hoy de esas posiciones</span><span className="amt">{fmt(comparable)}</span></li>
                   <li><span>Rentabilidad total</span><span className="amt" style={{ color: gain >= 0 ? 'var(--emerald)' : 'var(--clay)' }}>{gain >= 0 ? '+' : ''}{fmt(gain)} ({gain >= 0 ? '+' : ''}{gainPct.toFixed(1)}%)</span></li>
                 </ul>
