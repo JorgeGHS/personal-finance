@@ -201,7 +201,7 @@ export default function Dashboard() {
         },
       });
     }
-  }, [holdings, snapshots, loading]);
+  }, [holdings, snapshots, loading, tab]);
 
   if (loading) {
     return <div className="app"><p className="note">Cargando…</p></div>;
