@@ -26,11 +26,14 @@ git push -u origin main
 2. "Add New…" → "Project" → importa el repo `patrimonio`.
 3. Framework se detecta solo (Next.js). No hace falta tocar nada más aquí — **todavía no le des a Deploy**, primero el paso 3.
 
-## 3. Añadir la base de datos (Vercel KV)
+## 3. Añadir la base de datos (Upstash Redis, vía Marketplace)
+
+Vercel retiró su producto "KV" nativo — ahora se hace a través de la integración de Upstash.
 
 1. Dentro del proyecto en Vercel, ve a la pestaña **Storage**.
-2. "Create Database" → elige **KV** (está gestionado por Upstash, tiene capa gratuita de sobra para esto).
-3. Conéctala a este proyecto. Vercel inyecta automáticamente las variables `KV_REST_API_URL`, `KV_REST_API_TOKEN`, etc. — no tienes que copiarlas a mano.
+2. En "Marketplace Database Providers", click en **Upstash** (tiene una flecha `>`, abre un asistente).
+3. Elige **Redis**, capa gratuita, y una región (idealmente Europa).
+4. Conéctala al proyecto `personal-finance`. Vercel inyecta automáticamente las variables `KV_REST_API_URL` y `KV_REST_API_TOKEN` (nombres heredados de la época del producto KV nativo, pero es Upstash por debajo) — no tienes que copiarlas a mano.
 
 ## 4. Variables de entorno
 
@@ -56,7 +59,7 @@ cp .env.local.example .env.local   # rellena las variables
 npm run dev
 ```
 
-Para probar `/api/holdings` en local sin tener KV conectado, la app usa automáticamente los datos de partida (`lib/seedData.js`) si el KV falla — no rompe nada, simplemente no persiste hasta que tengas Vercel KV conectado en producción.
+Para probar `/api/holdings` en local sin tener Redis conectado, la app usa automáticamente los datos de partida (`lib/seedData.js`) si Redis falla — no rompe nada, simplemente no persiste hasta que tengas Upstash conectado en producción.
 
 ## Notas importantes
 

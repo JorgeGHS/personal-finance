@@ -12,6 +12,7 @@ import {
   computeTotals,
   fmt,
 } from '@/lib/seedData';
+import { cumulativeSeries, totalContributed } from '@/lib/transactions';
 
 function pnlText(h) {
   const p = pnl(h);
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const donutClassCanvas = useRef(null);
   const donutPlatformCanvas = useRef(null);
   const historyCanvas = useRef(null);
+  const contributionsCanvas = useRef(null);
   const chartsRef = useRef({});
 
   const showToast = useCallback((msg) => {
@@ -180,6 +182,25 @@ export default function Dashboard() {
         },
       });
     }
+
+    if (contributionsCanvas.current) {
+      destroy('contributions');
+      const series = cumulativeSeries();
+      const labels = series.map((p) => new Date(p.date).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }));
+      const data = series.map((p) => p.total);
+      chartsRef.current.contributions = new Chart(contributionsCanvas.current.getContext('2d'), {
+        type: 'line',
+        data: { labels, datasets: [{ data, borderColor: '#B08A3E', backgroundColor: 'rgba(176,138,62,0.08)', fill: true, tension: 0.15, pointRadius: 0, stepped: false }] },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { callback: (v) => fmt(v), font: { family: 'IBM Plex Mono', size: 10 }, color: '#5B6B66' }, grid: { color: '#D8DDDA' } },
+            x: { ticks: { font: { family: 'IBM Plex Mono', size: 10 }, color: '#5B6B66', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, grid: { display: false } },
+          },
+        },
+      });
+    }
   }, [holdings, snapshots, loading]);
 
   if (loading) {
@@ -318,13 +339,37 @@ export default function Dashboard() {
       {tab === 'historial' && (
         <div className="panel">
           <div className="card">
-            <h3>Evolución del patrimonio</h3>
-            <p className="cap">cada instantánea que guardes queda aquí, sincronizada entre tus dispositivos</p>
-            <div className="chart-wrap" style={{ height: 280 }}><canvas ref={historyCanvas} /></div>
-            <button className="btn" style={{ margin: '16px 0' }} onClick={saveSnapshot}>Guardar instantánea de hoy</button>
+            <h3>Capital invertido acumulado</h3>
+            <p className="cap">reconstruido a partir de tu historial real de transacciones (2021–2026)</p>
+            <div className="chart-wrap" style={{ height: 280 }}><canvas ref={contributionsCanvas} /></div>
+            <p className="note">
+              No incluye Oracle (RSU) ni Ledgy (stock options) — son compensación en acciones, no dinero que haya entrado en una cuenta.
+              Sí incluye el fondo Robeco de Sabadell (con fecha aproximada, no tengo el detalle exacto de esa aportación).
+            </p>
           </div>
           <div className="card">
-            <h3>Instantáneas guardadas</h3>
+            <h3>Rentabilidad total sobre lo aportado</h3>
+            <p className="cap">capital movido a cuentas de inversión vs. valor de mercado hoy</p>
+            {(() => {
+              const aportado = totalContributed();
+              const orcl = holdings.find((h) => h.id === 'orcl-fid');
+              const comparable = t.invested - (orcl ? value(orcl) : 0);
+              const gain = comparable - aportado;
+              const gainPct = aportado ? (gain / aportado) * 100 : 0;
+              return (
+                <ul className="summary-list">
+                  <li><span>Capital aportado</span><span className="amt">{fmt(aportado)}</span></li>
+                  <li><span>Valor de mercado hoy de esas posiciones</span><span className="amt">{fmt(comparable)}</span></li>
+                  <li><span>Rentabilidad total</span><span className="amt" style={{ color: gain >= 0 ? 'var(--emerald)' : 'var(--clay)' }}>{gain >= 0 ? '+' : ''}{fmt(gain)} ({gain >= 0 ? '+' : ''}{gainPct.toFixed(1)}%)</span></li>
+                </ul>
+              );
+            })()}
+          </div>
+          <div className="card">
+            <h3>Evolución medida (instantáneas manuales)</h3>
+            <p className="cap">cada instantánea que guardes desde hoy queda aquí, sincronizada entre tus dispositivos</p>
+            <div className="chart-wrap" style={{ height: 220 }}><canvas ref={historyCanvas} /></div>
+            <button className="btn" style={{ margin: '16px 0' }} onClick={saveSnapshot}>Guardar instantánea de hoy</button>
             {snapshots.length === 0 && <p className="note">Aún no has guardado ninguna instantánea.</p>}
             {[...snapshots].reverse().map((s, i) => (
               <div className="snap-row" key={i}>
